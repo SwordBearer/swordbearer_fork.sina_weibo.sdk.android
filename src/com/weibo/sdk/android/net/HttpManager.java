@@ -57,8 +57,8 @@ import com.weibo.sdk.android.util.Utility;
  */
 public class HttpManager {
 
-//	private static final String BOUNDARY = "7cd4a6d158c";
-    private static final String BOUNDARY=getBoundry();
+	// private static final String BOUNDARY = "7cd4a6d158c";
+	private static final String BOUNDARY = getBoundry();
 	private static final String MP_BOUNDARY = "--" + BOUNDARY;
 	private static final String END_MP_BOUNDARY = "--" + BOUNDARY + "--";
 	private static final String MULTIPART_FORM_DATA = "multipart/form-data";
@@ -68,22 +68,29 @@ public class HttpManager {
 
 	private static final int SET_CONNECTION_TIMEOUT = 5 * 1000;
 	private static final int SET_SOCKET_TIMEOUT = 20 * 1000;
+
 	/**
 	 * 
-	 * @param url 服务器地址
-	 * @param method "GET"or “POST”
-	 * @param params   存放参数的容器
-	 * @param file 文件路径，如果 是发送带有照片的微博的话，此参数为图片在sdcard里的绝对路径
+	 * @param url
+	 *            服务器地址
+	 * @param method
+	 *            "GET"or “POST”
+	 * @param params
+	 *            存放参数的容器
+	 * @param file
+	 *            文件路径，如果 是发送带有照片的微博的话，此参数为图片在sdcard里的绝对路径
 	 * @return 响应结果
 	 * @throws WeiboException
 	 */
-	public static String openUrl(String url, String method, WeiboParameters params, String file) throws WeiboException {
+	public static String openUrl(String url, String method,
+			WeiboParameters params, String file) throws WeiboException {
 		String result = "";
 		try {
 			HttpClient client = getNewHttpClient();
 			HttpUriRequest request = null;
 			ByteArrayOutputStream bos = null;
-			client.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, NetStateManager.getAPN());
+			client.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY,
+					NetStateManager.getAPN());
 			if (method.equals(HTTPMETHOD_GET)) {
 				url = url + "?" + Utility.encodeUrl(params);
 				HttpGet get = new HttpGet(url);
@@ -92,23 +99,24 @@ public class HttpManager {
 				HttpPost post = new HttpPost(url);
 				request = post;
 				byte[] data = null;
-				String _contentType=params.getValue("content-type");
-				
+				String _contentType = params.getValue("content-type");
+
 				bos = new ByteArrayOutputStream();
 				if (!TextUtils.isEmpty(file)) {
 					paramToUpload(bos, params);
-					post.setHeader("Content-Type", MULTIPART_FORM_DATA + "; boundary=" + BOUNDARY);
-					Utility.UploadImageUtils.revitionPostImageSize(  file);
+					post.setHeader("Content-Type", MULTIPART_FORM_DATA
+							+ "; boundary=" + BOUNDARY);
+					Utility.UploadImageUtils.revitionPostImageSize(file);
 					imageContentToUpload(bos, file);
 				} else {
-				    if(_contentType!=null){
-				        params.remove("content-type");
-				        post.setHeader("Content-Type", _contentType);
-				    }
-				    else{
-				        post.setHeader("Content-Type", "application/x-www-form-urlencoded");
-				    }
-					
+					if (_contentType != null) {
+						params.remove("content-type");
+						post.setHeader("Content-Type", _contentType);
+					} else {
+						post.setHeader("Content-Type",
+								"application/x-www-form-urlencoded");
+					}
+
 					String postParam = Utility.encodeParameters(params);
 					data = postParam.getBytes("UTF-8");
 					bos.write(data);
@@ -134,10 +142,11 @@ public class HttpManager {
 			throw new WeiboException(e);
 		}
 	}
-	
+
 	private static HttpClient getNewHttpClient() {
 		try {
-			KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+			KeyStore trustStore = KeyStore.getInstance(KeyStore
+					.getDefaultType());
 			trustStore.load(null, null);
 
 			SSLSocketFactory sf = new MySSLSocketFactory(trustStore);
@@ -152,21 +161,25 @@ public class HttpManager {
 			HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);
 
 			SchemeRegistry registry = new SchemeRegistry();
-			registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+			registry.register(new Scheme("http", PlainSocketFactory
+					.getSocketFactory(), 80));
 			registry.register(new Scheme("https", sf, 443));
 
-			ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, registry);
+			ClientConnectionManager ccm = new ThreadSafeClientConnManager(
+					params, registry);
 
-			HttpConnectionParams.setConnectionTimeout(params, SET_CONNECTION_TIMEOUT);
+			HttpConnectionParams.setConnectionTimeout(params,
+					SET_CONNECTION_TIMEOUT);
 			HttpConnectionParams.setSoTimeout(params, SET_SOCKET_TIMEOUT);
 			HttpClient client = new DefaultHttpClient(ccm, params);
-//			if (NetState.Mobile == NetStateManager.CUR_NETSTATE) {
-//				// 获取当前正在使用的APN接入点
-//				HttpHost proxy = NetStateManager.getAPN();
-//				if (null != proxy) {
-//					client.getParams().setParameter(ConnRouteParams.DEFAULT_PROXY, proxy);
-//				}
-//			}
+			// if (NetState.Mobile == NetStateManager.CUR_NETSTATE) {
+			// // 获取当前正在使用的APN接入点
+			// HttpHost proxy = NetStateManager.getAPN();
+			// if (null != proxy) {
+			// client.getParams().setParameter(ConnRouteParams.DEFAULT_PROXY,
+			// proxy);
+			// }
+			// }
 			return client;
 		} catch (Exception e) {
 			return new DefaultHttpClient();
@@ -176,17 +189,18 @@ public class HttpManager {
 	private static class MySSLSocketFactory extends SSLSocketFactory {
 		SSLContext sslContext = SSLContext.getInstance("TLS");
 
-		public MySSLSocketFactory(KeyStore truststore) throws NoSuchAlgorithmException,
-				KeyManagementException, KeyStoreException, UnrecoverableKeyException {
+		public MySSLSocketFactory(KeyStore truststore)
+				throws NoSuchAlgorithmException, KeyManagementException,
+				KeyStoreException, UnrecoverableKeyException {
 			super(truststore);
 
 			TrustManager tm = new X509TrustManager() {
-				public void checkClientTrusted(X509Certificate[] chain, String authType)
-						throws CertificateException {
+				public void checkClientTrusted(X509Certificate[] chain,
+						String authType) throws CertificateException {
 				}
 
-				public void checkServerTrusted(X509Certificate[] chain, String authType)
-						throws CertificateException {
+				public void checkServerTrusted(X509Certificate[] chain,
+						String authType) throws CertificateException {
 				}
 
 				public X509Certificate[] getAcceptedIssuers() {
@@ -198,9 +212,10 @@ public class HttpManager {
 		}
 
 		@Override
-		public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-				throws IOException, UnknownHostException {
-			return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+		public Socket createSocket(Socket socket, String host, int port,
+				boolean autoClose) throws IOException, UnknownHostException {
+			return sslContext.getSocketFactory().createSocket(socket, host,
+					port, autoClose);
 		}
 
 		@Override
@@ -217,7 +232,8 @@ public class HttpManager {
 			StringBuilder temp = new StringBuilder(10);
 			temp.setLength(0);
 			temp.append(MP_BOUNDARY).append("\r\n");
-			temp.append("content-disposition: form-data; name=\"").append(key).append("\"\r\n\r\n");
+			temp.append("content-disposition: form-data; name=\"").append(key)
+					.append("\"\r\n\r\n");
 			temp.append(params.getValue(key)).append("\r\n");
 			byte[] res = temp.toString().getBytes();
 			try {
@@ -228,12 +244,24 @@ public class HttpManager {
 		}
 	}
 
-	private static void imageContentToUpload(OutputStream out, String imgpath) throws WeiboException {
-		if(imgpath==null){
-		    return;
+	/**
+	 * 自定义的方法
+	 * 
+	 * @author SwordBearer
+	 * @param out
+	 * @param imgpath
+	 */
+	private static void tyc_imageContentToUpload(OutputStream out,
+			String[] imgPath) throws WeiboException {
+	}
+
+	private static void imageContentToUpload(OutputStream out, String imgpath)
+			throws WeiboException {
+		if (imgpath == null) {
+			return;
 		}
-	    StringBuilder temp = new StringBuilder();
-		
+		StringBuilder temp = new StringBuilder();
+
 		temp.append(MP_BOUNDARY).append("\r\n");
 		temp.append("Content-Disposition: form-data; name=\"pic\"; filename=\"")
 				.append("news_image").append("\"\r\n");
@@ -243,11 +271,11 @@ public class HttpManager {
 		FileInputStream input = null;
 		try {
 			out.write(res);
-			 input = new FileInputStream(imgpath);
-			byte[] buffer=new byte[1024*50];
-			while(true){
-				int count=input.read(buffer);
-				if(count==-1){
+			input = new FileInputStream(imgpath);
+			byte[] buffer = new byte[1024 * 50];
+			while (true) {
+				int count = input.read(buffer);
+				if (count == -1) {
 					break;
 				}
 				out.write(buffer, 0, count);
@@ -282,7 +310,8 @@ public class HttpManager {
 			ByteArrayOutputStream content = new ByteArrayOutputStream();
 
 			Header header = response.getFirstHeader("Content-Encoding");
-			if (header != null && header.getValue().toLowerCase().indexOf("gzip") > -1) {
+			if (header != null
+					&& header.getValue().toLowerCase().indexOf("gzip") > -1) {
 				inputStream = new GZIPInputStream(inputStream);
 			}
 
@@ -298,23 +327,23 @@ public class HttpManager {
 		}
 		return result;
 	}
-	   /**
-     * 产生11位的boundary
-     */
-    static String getBoundry() {
-        StringBuffer _sb = new StringBuffer();
-        for (int t = 1; t < 12; t++) {
-            long time = System.currentTimeMillis() + t;
-            if (time % 3 == 0) {
-                _sb.append((char) time % 9);
-            } else if (time % 3 == 1) {
-                _sb.append((char) (65 + time % 26));
-            } else {
-                _sb.append((char) (97 + time % 26));
-            }
-        }
-        return _sb.toString();
-    }
+
+	/**
+	 * 产生11位的boundary
+	 */
+	static String getBoundry() {
+		StringBuffer _sb = new StringBuffer();
+		for (int t = 1; t < 12; t++) {
+			long time = System.currentTimeMillis() + t;
+			if (time % 3 == 0) {
+				_sb.append((char) time % 9);
+			} else if (time % 3 == 1) {
+				_sb.append((char) (65 + time % 26));
+			} else {
+				_sb.append((char) (97 + time % 26));
+			}
+		}
+		return _sb.toString();
+	}
 
 }
-
